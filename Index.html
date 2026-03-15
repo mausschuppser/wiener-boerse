@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wiener Börse · KI-Marktausblick</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #0a0a0c;
+      color: #e0e0e0;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 2px; }
+
+```
+/* HEADER */
+#header {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 28px 24px 22px;
+  background: linear-gradient(180deg, rgba(255,200,0,0.05) 0%, transparent 100%);
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+#header-inner {
+  max-width: 860px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; gap: 14px;
+}
+.header-label {
+  font-size: 10px; letter-spacing: 0.18em; color: #ffd600;
+  text-transform: uppercase; margin-bottom: 6px;
+  font-family: 'DM Mono', monospace;
+}
+h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 400; color: #fff; line-height: 1.15;
+}
+h1 em { color: #ffd600; font-style: italic; }
+#date-str {
+  font-size: 11px; color: #444; margin-top: 7px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* BUTTONS */
+.btn {
+  border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s; border-radius: 8px; font-weight: 600;
+}
+#btn-top-picks {
+  background: rgba(255,200,0,0.12);
+  border: 1px solid rgba(255,200,0,0.35) !important;
+  color: #ffd600; padding: 10px 20px; font-size: 13px;
+}
+#btn-top-picks:hover { background: rgba(255,200,0,0.2); }
+#btn-top-picks:disabled { opacity: 0.5; cursor: default; }
+
+/* MAIN */
+#main { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+/* TOP PICKS */
+#top-picks-panel {
+  margin: 22px 0;
+  background: linear-gradient(135deg, rgba(255,200,0,0.07), rgba(255,200,0,0.02));
+  border: 1px solid rgba(255,200,0,0.18);
+  border-radius: 14px; padding: 20px 24px;
+  display: none;
+}
+#top-picks-panel.visible { display: block; }
+.picks-label {
+  font-size: 10px; color: #ffd600; letter-spacing: 0.14em;
+  text-transform: uppercase; margin-bottom: 12px;
+  font-family: 'DM Mono', monospace;
+}
+#market-comment {
+  font-size: 12px; color: #777; margin-bottom: 16px; font-style: italic;
+}
+#picks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.pick-card {
+  background: rgba(0,0,0,0.35); border-radius: 10px; padding: 13px;
+}
+.pick-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.pick-ticker { font-family: 'DM Mono', monospace; font-size: 12px; color: #ffd600; font-weight: 700; }
+.pick-upside { font-size: 12px; color: #00c853; font-weight: 600; }
+.pick-name { font-size: 13px; color: #ddd; font-weight: 500; margin-bottom: 5px; }
+.pick-reason { font-size: 11px; color: #666; line-height: 1.6; }
+.disclaimer-small { margin-top: 12px; font-size: 10px; color: #383838; font-style: italic; }
+
+/* TABS */
+#segment-tabs { display: flex; gap: 8px; margin-top: 22px; }
+.tab-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  color: #555; padding: 7px 16px; border-radius: 8px;
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+}
+.tab-btn.active-prime {
+  background: rgba(255,200,0,0.12);
+  border-color: rgba(255,200,0,0.35) !important; color: #ffd600;
+}
+.tab-btn.active-standard {
+  background: rgba(100,180,255,0.12);
+  border-color: rgba(100,180,255,0.35) !important; color: #64b4ff;
+}
+.tab-count { opacity: 0.6; }
+
+/* STATS */
+#stats-bar { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+.stat-pill {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 7px; padding: 7px 13px;
+  display: flex; align-items: center; gap: 7px;
+}
+.stat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.stat-label { font-size: 11px; color: #666; }
+.stat-count { font-size: 13px; font-weight: 700; font-family: 'DM Mono', monospace; }
+
+/* CONTROLS */
+#controls {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+}
+#filter-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.filter-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.07) !important;
+  color: #444; padding: 5px 11px; border-radius: 6px;
+  cursor: pointer; font-size: 12px; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.filter-btn.active { background: rgba(255,255,255,0.07); color: #ccc; }
+#btn-analyze-all {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #bbb; padding: 6px 14px; font-size: 12px;
+}
+#btn-analyze-all:hover { background: rgba(255,255,255,0.1); }
+#btn-analyze-all:disabled { color: #444; cursor: default; }
+
+/* STOCK LIST */
+#stock-list { display: flex; flex-direction: column; gap: 7px; }
+
+.stock-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 14px 18px;
+  cursor: pointer; transition: border-color 0.2s;
+  user-select: none;
+}
+.stock-card:hover { border-color: rgba(255,200,0,0.35); }
+.stock-card-header { display: flex; justify-content: space-between; align-items: center; }
+.stock-left { display: flex; align-items: center; gap: 12px; }
+.stock-icon {
+  width: 38px; height: 38px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; font-family: 'DM Mono', monospace;
+  text-align: center; padding: 2px; flex-shrink: 0;
+}
+.stock-icon.prime { background: rgba(255,200,0,0.12); color: #ffd600; }
+.stock-icon.standard { background: rgba(100,180,255,0.12); color: #64b4ff; }
+.stock-name { font-weight: 600; font-size: 14px; color: #f0f0f0; }
+.stock-sector { font-size: 11px; color: #555; margin-top: 1px; }
+.stock-right { display: flex; align-items: center; gap: 10px; }
+.loading-text { color: #555; font-size: 12px; }
+.hint-text { font-size: 11px; color: #383838; }
+.chevron { color: #333; font-size: 14px; transition: transform 0.2s; display: inline-block; }
+.chevron.open { transform: rotate(180deg); }
+
+.badge {
+  padding: 3px 10px; border-radius: 20px; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  font-family: 'DM Mono', monospace; border: 1px solid;
+}
+.badge-kaufen { background: rgba(0,200,83,0.09); color: #00c853; border-color: rgba(0,200,83,0.27); }
+.badge-beobachten { background: rgba(255,214,0,0.09); color: #ffd600; border-color: rgba(255,214,0,0.27); }
+.badge-verkaufen { background: rgba(255,23,68,0.09); color: #ff1744; border-color: rgba(255,23,68,0.27); }
+
+.stock-detail {
+  margin-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 14px; display: none;
+}
+.stock-detail.open { display: block; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.detail-box { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 12px; }
+.detail-box-label { font-size: 10px; color: #444; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.08em; }
+.detail-box-val { font-size: 13px; color: #bbb; }
+.detail-summary { font-size: 13px; color: #999; line-height: 1.7; }
+.detail-summary strong { color: #ccc; }
+.catalysts-label { font-size: 10px; color: #444; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px; }
+.catalysts-list { margin: 0; padding-left: 16px; }
+.catalysts-list li { font-size: 12px; color: #777; margin-bottom: 3px; }
+
+/* DISCLAIMER */
+#disclaimer {
+  margin-top: 36px; padding: 14px 18px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 9px; font-size: 10px; color: #383838; line-height: 1.8;
+}
+#disclaimer strong { color: #444; }
+
+@media (max-width: 480px) {
+  #header { padding: 20px 16px 16px; }
+  #main { padding: 0 16px; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+```
+
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-inner">
+    <div>
+      <div class="header-label">Wiener Börse · KI-Analyse</div>
+      <h1>Täglicher<br /><em>Marktausblick</em></h1>
+      <div id="date-str"></div>
+    </div>
+    <button class="btn" id="btn-top-picks">✦ Top 3 Picks heute</button>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- Top Picks Panel -->
+
+  <div id="top-picks-panel">
+    <div class="picks-label">✦ Top 3 Picks · <span id="picks-date"></span></div>
+    <div id="market-comment"></div>
+    <div id="picks-grid"></div>
+    <div class="disclaimer-small">⚠ KI-generierte Einschätzungen – keine Anlageberatung.</div>
+  </div>
+
+  <!-- Segment Tabs -->
+
+  <div id="segment-tabs">
+    <button class="tab-btn active-prime" data-seg="prime">Prime Market <span class="tab-count">(22)</span></button>
+    <button class="tab-btn" data-seg="standard">Standard Market <span class="tab-count">(9)</span></button>
+  </div>
+
+  <!-- Stats -->
+
+  <div id="stats-bar">
+    <div class="stat-pill"><span class="stat-dot" style="background:#00c853"></span><span class="stat-label">Kaufen</span><span class="stat-count" id="stat-kaufen" style="color:#00c853">0</span></div>
+    <div class="stat-pill"><span class="stat-dot" style="background:#ffd600"></span><span class="stat-label">Beobachten</span><span class="stat-count" id="stat-beobachten" style="color:#ffd600">0</span></div>
+    <div class="stat-pill"><span class="stat-dot" style="background:#ff1744"></span><span class="stat-label">Verkaufen</span><span class="stat-count" id="stat-verkaufen" style="color:#ff1744">0</span></div>
+  </div>
+
+  <!-- Controls -->
+
+  <div id="controls">
+    <div id="filter-btns">
+      <button class="filter-btn active" data-filter="Alle">Alle</button>
+      <button class="filter-btn" data-filter="Kaufen">Kaufen</button>
+      <button class="filter-btn" data-filter="Beobachten">Beobachten</button>
+      <button class="filter-btn" data-filter="Verkaufen">Verkaufen</button>
+    </div>
+    <button class="btn" id="btn-analyze-all">Alle Prime analysieren</button>
+  </div>
+
+  <!-- Stock List -->
+
+  <div id="stock-list"></div>
+
+  <!-- Disclaimer -->
+
+  <div id="disclaimer">
+    <strong>Haftungsausschluss:</strong> Alle Analysen sind KI-generiert und basieren auf allgemeinem Marktwissen sowie öffentlich verfügbaren Informationen. Dies stellt <strong>keine Anlageberatung</strong> dar. Investitionsentscheidungen sollten immer auf eigener Recherche und ggf. professioneller Beratung basieren. Vergangene und projizierte Entwicklungen sind keine Garantie für zukünftige Ergebnisse.
+  </div>
+</div>
+
+<script>
+const STOCKS = {
+  prime: [
+    { ticker: "ANDR", name: "Andritz AG", sector: "Maschinenbau" },
+    { ticker: "ATS",  name: "AT&S Austria Technologie", sector: "Elektronik" },
+    { ticker: "BG",   name: "BAWAG Group AG", sector: "Banken" },
+    { ticker: "CAI",  name: "CA Immobilien", sector: "Immobilien" },
+    { ticker: "DOC",  name: "DO & CO AG", sector: "Gastronomie" },
+    { ticker: "EBS",  name: "Erste Group Bank AG", sector: "Banken" },
+    { ticker: "EVN",  name: "EVN AG", sector: "Energie" },
+    { ticker: "FLU",  name: "Flughafen Wien AG", sector: "Infrastruktur" },
+    { ticker: "LNZ",  name: "Lenzing AG", sector: "Fasern/Chemie" },
+    { ticker: "MMK",  name: "Mayr-Melnhof Karton AG", sector: "Verpackung" },
+    { ticker: "OMV",  name: "OMV AG", sector: "Öl & Gas" },
+    { ticker: "POST", name: "Österreichische Post AG", sector: "Logistik" },
+    { ticker: "RBI",  name: "Raiffeisen Bank Intl.", sector: "Banken" },
+    { ticker: "SBO",  name: "Schoeller-Bleckmann", sector: "Ölfeldausrüstung" },
+    { ticker: "STR",  name: "Strabag SE", sector: "Bau" },
+    { ticker: "TKA",  name: "Telekom Austria AG", sector: "Telekommunikation" },
+    { ticker: "UQA",  name: "Uniqa Insurance Group", sector: "Versicherung" },
+    { ticker: "VER",  name: "Verbund AG", sector: "Energie" },
+    { ticker: "VIG",  name: "Vienna Insurance Group", sector: "Versicherung" },
+    { ticker: "VOE",  name: "voestalpine AG", sector: "Stahl" },
+    { ticker: "WIE",  name: "Wienerberger AG", sector: "Baustoffe" },
+    { ticker: "PAL",  name: "Palfinger AG", sector: "Maschinenbau" },
+  ],
+  standard: [
+    { ticker: "BWT",  name: "BWT AG", sector: "Wasseraufbereitung" },
+    { ticker: "KTM",  name: "PIERER Mobility AG", sector: "Fahrzeuge" },
+    { ticker: "IIA",  name: "Immofinanz AG", sector: "Immobilien" },
+    { ticker: "SEM",  name: "Semperit AG", sector: "Gummiprodukte" },
+    { ticker: "ZAG",  name: "Zumtobel Group AG", sector: "Beleuchtung" },
+    { ticker: "WAC",  name: "Wolford AG", sector: "Mode" },
+    { ticker: "MMB",  name: "Marinomed Biotech", sector: "Biotech" },
+    { ticker: "SNT",  name: "S&T AG", sector: "IT-Dienstleistungen" },
+    { ticker: "AGR",  name: "Agrana Beteiligungs-AG", sector: "Lebensmittel" },
+  ]
+};
+
+const today = new Date();
+const dateStr = today.toLocaleDateString('de-AT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+document.getElementById('date-str').textContent = dateStr;
+document.getElementById('picks-date').textContent = dateStr;
+
+let analyses = {};
+let loadingSet = new Set();
+let activeSegment = 'prime';
+let activeFilter = 'Alle';
+let globalLoading = false;
+
+// ── Claude API ──────────────────────────────────────────────
+async function callClaude(userContent, system) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system,
+      messages: [{ role: 'user', content: userContent }]
+    })
+  });
+  const data = await res.json();
+  const text = (data.content || []).map(b => b.text || '').join('');
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+// ── Analyze single stock ─────────────────────────────────────
+async function analyzeStock(stock) {
+  const key = stock.ticker;
+  if (analyses[key] || loadingSet.has(key)) return;
+  loadingSet.add(key);
+  updateCard(key);
+  try {
+    const result = await callClaude(
+      `Analysiere "${stock.name}" (${stock.ticker}), Sektor: "${stock.sector}", Wiener Börse, für die nächsten 7 Tage. Heute: ${dateStr}.\nNUR JSON ohne Backticks:\n{"rating":"Kaufen"|"Beobachten"|"Verkaufen","trend":"...","risk":"Niedrig"|"Mittel"|"Hoch","summary":"2-3 Sätze","catalysts":["...","..."]}`,
+      'Du bist ein österreichischer Börsenanalyst. Antworte NUR mit validem JSON ohne Backticks oder Markdown.'
+    );
+    analyses[key] = result;
+  } catch {
+    analyses[key] = { rating: 'Beobachten', trend: 'N/A', risk: 'Mittel', summary: 'Analyse nicht verfügbar.', catalysts: [] };
+  }
+  loadingSet.delete(key);
+  updateCard(key);
+  updateStats();
+}
+
+// ── Analyze all ───────────────────────────────────────────────
+async function analyzeAll() {
+  if (globalLoading) return;
+  globalLoading = true;
+  const btn = document.getElementById('btn-analyze-all');
+  btn.disabled = true;
+  for (const stock of STOCKS[activeSegment]) {
+    if (!analyses[stock.ticker]) {
+      await analyzeStock(stock);
+      await new Promise(r => setTimeout(r, 280));
+    }
+  }
+  globalLoading = false;
+  btn.disabled = false;
+  btn.textContent = `Alle ${activeSegment === 'prime' ? 'Prime' : 'Standard'} analysieren`;
+}
+
+// ── Top Picks ─────────────────────────────────────────────────
+async function getTopPicks() {
+  const btn = document.getElementById('btn-top-picks');
+  btn.disabled = true; btn.textContent = 'Analysiere…';
+  try {
+    const result = await callClaude(
+      `Heute: ${dateStr}. Nenne TOP 3 Aktien der Wiener Börse (Prime+Standard) für nächste 7 Tage.\nNUR JSON:\n{"picks":[{"name":"...","ticker":"...","reason":"1-2 Sätze","upside":"z.B. +3-5%"},{"name":"...","ticker":"...","reason":"...","upside":"..."},{"name":"...","ticker":"...","reason":"...","upside":"..."}],"marketComment":"1 Satz"}`,
+      'Du bist ein österreichischer Börsenanalyst. Antworte NUR mit validem JSON ohne Backticks.'
+    );
+    renderTopPicks(result);
+  } catch(e) { console.error(e); }
+  btn.disabled = false; btn.textContent = '✦ Top 3 Picks heute';
+}
+
+function renderTopPicks(data) {
+  document.getElementById('market-comment').textContent = data.marketComment || '';
+  const grid = document.getElementById('picks-grid');
+  grid.innerHTML = '';
+  (data.picks || []).forEach(p => {
+    grid.innerHTML += `
+      <div class="pick-card">
+        <div class="pick-header">
+          <span class="pick-ticker">${p.ticker}</span>
+          <span class="pick-upside">${p.upside}</span>
+        </div>
+        <div class="pick-name">${p.name}</div>
+        <div class="pick-reason">${p.reason}</div>
+      </div>`;
+  });
+  document.getElementById('top-picks-panel').classList.add('visible');
+}
+
+// ── Render cards ──────────────────────────────────────────────
+function renderList() {
+  const list = document.getElementById('stock-list');
+  list.innerHTML = '';
+  const stocks = STOCKS[activeSegment].filter(s => {
+    if (activeFilter === 'Alle') return true;
+    return analyses[s.ticker]?.rating === activeFilter;
+  });
+  stocks.forEach(stock => {
+    const div = document.createElement('div');
+    div.className = 'stock-card';
+    div.dataset.ticker = stock.ticker;
+    div.innerHTML = buildCardHTML(stock);
+    div.addEventListener('click', () => handleCardClick(stock, div));
+    list.appendChild(div);
+  });
+  updateStats();
+}
+
+function buildCardHTML(stock) {
+  const seg = activeSegment;
+  const a = analyses[stock.ticker];
+  const loading = loadingSet.has(stock.ticker);
+
+  let rightHTML = '';
+  if (loading) {
+    rightHTML = `<span class="loading-text">Analysiere…</span>`;
+  } else if (a) {
+    const cls = 'badge-' + a.rating.toLowerCase();
+    rightHTML = `<span class="badge ${cls}">${a.rating}</span>`;
+  } else {
+    rightHTML = `<span class="hint-text">→ anklicken</span>`;
+  }
+
+  let detailHTML = '';
+  if (a && !loading) {
+    const cats = (a.catalysts || []).map(c => `<li>${c}</li>`).join('');
+    detailHTML = `
+      <div class="stock-detail">
+        <div class="detail-grid">
+          <div class="detail-box"><div class="detail-box-label">Trend 7 Tage</div><div class="detail-box-val">${a.trend}</div></div>
+          <div class="detail-box"><div class="detail-box-label">Risiko</div><div class="detail-box-val">${a.risk}</div></div>
+        </div>
+        <div class="detail-summary"><strong>Analyse: </strong>${a.summary}</div>
+        ${cats ? `<div class="catalysts-label">Katalysatoren</div><ul class="catalysts-list">${cats}</ul>` : ''}
+        <div class="disclaimer-small" style="margin-top:10px;">⚠ Keine Anlageberatung. Eigene Recherche empfohlen.</div>
+      </div>`;
+  }
+
+  return `
+    <div class="stock-card-header">
+      <div class="stock-left">
+        <div class="stock-icon ${seg}">${stock.ticker}</div>
+        <div>
+          <div class="stock-name">${stock.name}</div>
+          <div class="stock-sector">${stock.sector}</div>
+        </div>
+      </div>
+      <div class="stock-right">
+        ${rightHTML}
+        <span class="chevron">▾</span>
+      </div>
+    </div>
+    ${detailHTML}`;
+}
+
+function handleCardClick(stock, div) {
+  if (!analyses[stock.ticker] && !loadingSet.has(stock.ticker)) {
+    analyzeStock(stock).then(() => {
+      div.innerHTML = buildCardHTML(stock);
+      reattachDetail(div);
+    });
+  }
+  const detail = div.querySelector('.stock-detail');
+  const chevron = div.querySelector('.chevron');
+  if (detail) {
+    detail.classList.toggle('open');
+    if (chevron) chevron.classList.toggle('open');
+  }
+}
+
+function reattachDetail(div) {
+  // rebuild HTML keeps event listener on the outer div
+}
+
+function updateCard(ticker) {
+  const div = document.querySelector(`[data-ticker="${ticker}"]`);
+  if (!div) return;
+  const wasOpen = div.querySelector('.stock-detail.open') !== null;
+  const stock = [...STOCKS.prime, ...STOCKS.standard].find(s => s.ticker === ticker);
+  if (!stock) return;
+  div.innerHTML = buildCardHTML(stock);
+  if (wasOpen) {
+    const detail = div.querySelector('.stock-detail');
+    const chevron = div.querySelector('.chevron');
+    if (detail) detail.classList.add('open');
+    if (chevron) chevron.classList.add('open');
+  }
+}
+
+function updateStats() {
+  const stocks = STOCKS[activeSegment];
+  document.getElementById('stat-kaufen').textContent    = stocks.filter(s => analyses[s.ticker]?.rating === 'Kaufen').length;
+  document.getElementById('stat-beobachten').textContent = stocks.filter(s => analyses[s.ticker]?.rating === 'Beobachten').length;
+  document.getElementById('stat-verkaufen').textContent  = stocks.filter(s => analyses[s.ticker]?.rating === 'Verkaufen').length;
+}
+
+// ── Segment tabs ──────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeSegment = btn.dataset.seg;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.className = 'tab-btn';
+    });
+    btn.className = `tab-btn active-${activeSegment}`;
+    document.getElementById('btn-analyze-all').textContent =
+      `Alle ${activeSegment === 'prime' ? 'Prime' : 'Standard'} analysieren`;
+    renderList();
+  });
+});
+
+// ── Filter buttons ────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  });
+});
+
+// ── Global buttons ────────────────────────────────────────────
+document.getElementById('btn-top-picks').addEventListener('click', getTopPicks);
+document.getElementById('btn-analyze-all').addEventListener('click', analyzeAll);
+
+// ── Init ──────────────────────────────────────────────────────
+renderList();
+</script>
+
+</body>
+</html>
